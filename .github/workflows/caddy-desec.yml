@@ -27,6 +27,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set CalVer tag
+        run: echo "CALVER=$(date -u +%Y.%m.%d)" >> "$GITHUB_ENV"
+
       - uses: docker/build-push-action@v6
         with:
           context: caddy-desec
@@ -36,5 +39,7 @@ jobs:
           # cached layers with stale versions.
           pull: true
           no-cache: true
+          # CalVer tag (e.g. 2026.02.15) for rollback, latest for convenience
           tags: |
             ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ env.CALVER }}
