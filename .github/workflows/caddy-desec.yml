@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - caddy-desec/Dockerfile
+  # Rebuild weekly to pick up new caddy releases and desec module updates
   schedule:
     - cron: "0 4 * * 1"
   workflow_dispatch:
@@ -30,5 +31,10 @@ jobs:
         with:
           context: caddy-desec
           push: true
+          # Always pull fresh base images (caddy:2, caddy:2-builder) so weekly
+          # rebuilds actually pick up new upstream releases instead of using
+          # cached layers with stale versions.
+          pull: true
+          no-cache: true
           tags: |
             ${{ env.IMAGE }}:latest
