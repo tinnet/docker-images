@@ -1,0 +1,45 @@
+name: Build caddy-bunny
+
+on:
+  push:
+    paths:
+      - caddy-bunny/Dockerfile
+  # Rebuild weekly to pick up new caddy releases and bunny module updates
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+env:
+  IMAGE: ghcr.io/tinnet/caddy-bunny
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set CalVer tag
+        run: echo "CALVER=$(date -u +%Y.%m.%d)" >> "$GITHUB_ENV"
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: caddy-bunny
+          push: true
+          # Always pull fresh base images (caddy:2, caddy:2-builder) so weekly
+          # rebuilds actually pick up new upstream releases instead of using
+          # cached layers with stale versions.
+          pull: true
+          no-cache: true
+          # CalVer tag (e.g. 2026.02.15) for rollback, latest for convenience
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ env.CALVER }}
